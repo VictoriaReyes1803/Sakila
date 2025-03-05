@@ -192,7 +192,7 @@ class Staff(models.Model):
     address = models.ForeignKey(Address, models.DO_NOTHING)
     picture = models.TextField(blank=True, null=True)
     email = models.CharField(max_length=50, blank=True, null=True)
-    store = models.ForeignKey('Store', models.DO_NOTHING)
+    store = models.ForeignKey('Store', on_delete=models.CASCADE,related_name='staff_members')
     active = models.IntegerField()
     username = models.CharField(max_length=16)
     password = models.CharField(max_length=40, db_collation='utf8mb4_bin', blank=True, null=True)
@@ -205,7 +205,7 @@ class Staff(models.Model):
 
 class Store(models.Model):
     store_id = models.AutoField(primary_key=True)
-    manager_staff = models.OneToOneField(Staff, models.DO_NOTHING)
+    manager_staff = models.OneToOneField(Staff, on_delete=models.CASCADE,related_name='managed_store')
     address = models.ForeignKey(Address, models.DO_NOTHING)
     last_update = models.DateTimeField()
 

@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'sakila_app',
     'rest_framework',
+    'drf_generators',
 ]
 
 MIDDLEWARE = [
