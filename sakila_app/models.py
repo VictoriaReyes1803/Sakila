@@ -28,7 +28,7 @@ class Address(models.Model):
     city = models.ForeignKey('City', models.DO_NOTHING)
     postal_code = models.CharField(max_length=10, blank=True, null=True)
     phone = models.CharField(max_length=20)
-    location = models.TextField()  # This field type is a guess.
+    location = models.TextField()
     last_update = models.DateTimeField()
 
     class Meta:
