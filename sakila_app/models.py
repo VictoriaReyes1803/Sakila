@@ -185,6 +185,15 @@ class Rental(models.Model):
         unique_together = (('rental_date', 'inventory', 'customer'),)
 
 
+class Roles(models.Model):
+    role_id = models.AutoField(primary_key=True)
+    role_name = models.CharField(max_length=45, null=False)
+
+    class Meta:
+        managed = False
+        db_table = 'roles'
+
+
 class Staff(models.Model):
     staff_id = models.AutoField(primary_key=True)
     first_name = models.CharField(max_length=45)
@@ -197,6 +206,7 @@ class Staff(models.Model):
     username = models.CharField(max_length=16)
     password = models.CharField(max_length=40, db_collation='utf8mb4_bin', blank=True, null=True)
     last_update = models.DateTimeField()
+    role_id = models.ForeignKey(Roles, models.DO_NOTHING, null=False)
 
     class Meta:
         managed = False
