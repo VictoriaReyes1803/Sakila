@@ -1,3 +1,4 @@
+
 """
 Django settings for sakila project.
 
@@ -11,6 +12,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
+from corsheaders.defaults import default_headers
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-=^9kl4r_^ghzjjfibrog+$_!5ouo@tb$13j*!l4_e5k&k$y8ud'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -40,23 +43,47 @@ INSTALLED_APPS = [
     'sakila_app',
     'rest_framework',
     'drf_generators',
+    'corsheaders',
+    'storages',
 ]
 
 REST_FRAMEWORK = {
+     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     #Elementos por pag.
     'PAGE_SIZE': 10
 }
+AUTHENTICATION_BACKENDS = (
+    'sakila_app.authentication.EmailBackend',  
+    'django.contrib.auth.backends.ModelBackend', 
+)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'sakila_app.middleware.JWTAuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
 ]
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=4),  
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=4),  
+    'ROTATE_REFRESH_TOKENS': False, 
+    'BLACKLIST_AFTER_ROTATION': True, 
+}
+
+AUTH_USER_MODEL = 'sakila_app.User'
 
 ROOT_URLCONF = 'sakila.urls'
 
@@ -133,3 +160,15 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'          # Servidor SMTP de Gmail (o el de tu proveedor)
+EMAIL_PORT = 587                       # Puerto para TLS
+EMAIL_USE_TLS = True                   # Habilitar TLS
+EMAIL_HOST_USER = 'clayens82@gmail.com' # Tu correo electrónico
+EMAIL_HOST_PASSWORD = 'lgfc mzle bnrw zocx'   # Contraseña del correo electrónico
+DEFAULT_FROM_EMAIL = 'clayens82@gmail.com'  # Dirección del remitente
+
+
+
+
+
