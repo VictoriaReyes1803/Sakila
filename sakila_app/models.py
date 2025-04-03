@@ -260,27 +260,47 @@ class Rental(models.Model):
 
 
 class Roles(models.Model):
-    role_id = models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     role_name = models.CharField(max_length=45, null=False)
 
     class Meta:
         managed = False
         db_table = 'roles'
 
+class StaffManager(BaseUserManager):
+    def create_user(self, username, password=None, **extra_fields):
+        user = self.model(username=username, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
 
-class Staff(models.Model):
+
+class Staff(AbstractBaseUser):
     staff_id = models.AutoField(primary_key=True)
     first_name = models.CharField(max_length=45)
     last_name = models.CharField(max_length=45)
     address = models.ForeignKey(Address, models.DO_NOTHING)
     picture = models.TextField(blank=True, null=True)
-    email = models.CharField(max_length=50, blank=True, null=True)
+    email = models.CharField(max_length=50, blank=False, null=False)
     store = models.ForeignKey('Store', on_delete=models.CASCADE,related_name='staff_members')
-    active = models.IntegerField()
+    active = models.IntegerField(default=0)
     username = models.CharField(max_length=16)
-    password = models.CharField(max_length=40, db_collation='utf8mb4_bin', blank=True, null=True)
+    password = models.CharField(max_length=128, blank=False, null=False)
     last_update = models.DateTimeField()
     role_id = models.ForeignKey(Roles, models.DO_NOTHING, null=False)
+    last_login = None
+
+    @property
+    def is_active(self):
+        return bool(self.active)
+
+    @property
+    def is_authenticated(self):
+        return True
+
+    objects = StaffManager()
+
+    USERNAME_FIELD = 'email'
 
     class Meta:
         managed = False

@@ -59,7 +59,8 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10
 }
 AUTHENTICATION_BACKENDS = (
-    'sakila_app.authentication.EmailBackend',  
+    'sakila_app.authentication.EmailBackend',
+    'sakila_app.authentication.StaffAuthBackend',
     'django.contrib.auth.backends.ModelBackend', 
 )
 
@@ -76,6 +77,22 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
 ]
 
+
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
+
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SECURE = False
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=4),  
     'REFRESH_TOKEN_LIFETIME': timedelta(days=4),  
@@ -83,7 +100,7 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True, 
 }
 
-AUTH_USER_MODEL = 'sakila_app.User'
+AUTH_USER_MODEL = 'sakila_app.Staff'
 
 ROOT_URLCONF = 'sakila.urls'
 

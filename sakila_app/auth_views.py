@@ -1,3 +1,4 @@
+import hashlib
 
 from django.shortcuts import render
 from rest_framework.views import APIView
@@ -9,11 +10,11 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
-from .models import User 
+from .models import User, Staff
 from .serializers import UserSerializer, SendEmailSerializer, VerifyCodeSerializer, ResetPasswordSerializer, ResetPasswordResponseSerializer
 from django.utils.crypto import get_random_string
 from django.core.mail import send_mail
@@ -36,6 +37,24 @@ class RegisterView(generics.CreateAPIView):
         serializer.save(is_active=True)
 
 
+class LoginView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        password = request.data.get('password')
+
+        user = Staff.objects.filter(email=email).first()
+        if not user:
+            return Response({'error': 'Staff no existe'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Verificar contraseña SHA1
+        hashed_password = hashlib.sha1(password.encode()).hexdigest()
+        if user.password != hashed_password:
+            return Response({'error': 'Contraseña inválida'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        login(request, user, backend='sakila_app.backends.StaffAuthBackend')
+        return Response({'message': '¡Login exitoso!'})
+
+"""
 class LoginView(generics.GenericAPIView):
     
     permission_classes = [AllowAny]
@@ -64,7 +83,7 @@ class LoginView(generics.GenericAPIView):
             })
         return Response({'error': 'Credenciales inválidas'}, status=status.HTTP_401_UNAUTHORIZED)
     
-
+"""
 
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
