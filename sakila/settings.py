@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'drf_generators',
     'corsheaders',
     'storages',
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
 REST_FRAMEWORK = {
@@ -97,7 +98,16 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=4),  
     'REFRESH_TOKEN_LIFETIME': timedelta(days=4),  
     'ROTATE_REFRESH_TOKENS': False, 
-    'BLACKLIST_AFTER_ROTATION': True, 
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'BLACKLIST_AFTER_ROTATION': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+    'BLACKLIST_ENABLED': True, 
 }
 
 AUTH_USER_MODEL = 'sakila_app.Staff'

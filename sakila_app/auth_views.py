@@ -119,7 +119,8 @@ class LogoutView(generics.GenericAPIView):
                 return Response({'error': 'No refresh token provided'}, status=status.HTTP_400_BAD_REQUEST)
             
             token = RefreshToken(refresh_token)
-            token.blacklist()
+            response = token.blacklist()
+            
             return Response({'message': 'Sesión cerrada correctamente'}, status=status.HTTP_205_RESET_CONTENT)
         except AttributeError as e:
             return Response({'error': f'AttributeError: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)

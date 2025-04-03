@@ -60,7 +60,7 @@ class User(AbstractBaseUser):
     
     def generate_reset_token(self):
         """Genera un token JWT para restablecimiento de contraseña."""
-        expiration = timezone.now() + timedelta(minutes=60)  
+        expiration = timezone.now() + timedelta(minutes=4)  
         token = jwt.encode({
             'user_id': self.id,
             'exp': int(expiration.timestamp())

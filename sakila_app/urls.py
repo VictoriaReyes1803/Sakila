@@ -29,8 +29,8 @@ urlpatterns = [
     path('user/', UserProfileView.as_view(), name='user-profile'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('send-recovery-email/', SendRecoveryEmailView.as_view(), name='send-recovery-email'),
-    path('password-reset/', reset_password_view, name='password-reset'),
-    path('reset-password/', ResetPasswordView.as_view(), name='reset-password'),
+    path('api/reset-password/<uidb64>/<token>/', reset_password_view, name='reset-password'),
+    path('api/api/reset-password/<uidb64>/<token>/', ResetPasswordView.as_view(), name='api-reset-password'),
     
     path('', include(router.urls)),
 ]
