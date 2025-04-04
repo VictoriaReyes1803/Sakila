@@ -15,7 +15,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
 from .models import User, Staff
-from .serializers import UserSerializer, SendEmailSerializer, VerifyCodeSerializer, ResetPasswordSerializer, ResetPasswordResponseSerializer
+from .serializers import StaffSerializer, SendEmailSerializer, VerifyCodeSerializer, ResetPasswordSerializer, ResetPasswordResponseSerializer
 from django.utils.crypto import get_random_string
 from django.core.mail import send_mail
 from django.utils.http import urlsafe_base64_encode
@@ -29,12 +29,12 @@ from django.contrib import messages
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_class = StaffSerializer
     permission_classes = [AllowAny]
     
     def perform_create(self, serializer):
         
-        serializer.save(is_active=True)
+        serializer.save(active=True)
 
 
 class LoginView(APIView):
@@ -54,7 +54,7 @@ class LoginView(APIView):
         login(request, user, backend='sakila_app.backends.StaffAuthBackend')
         return Response({'message': '¡Login exitoso!'})
 
-"""
+
 class LoginView(generics.GenericAPIView):
     
     permission_classes = [AllowAny]
@@ -79,27 +79,27 @@ class LoginView(generics.GenericAPIView):
             return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
-                'user': UserSerializer(user).data
+                'user': StaffSerializer(user).data
             })
         return Response({'error': 'Credenciales inválidas'}, status=status.HTTP_401_UNAUTHORIZED)
     
-"""
+
 
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        serializer = UserSerializer(user)
+        serializer = StaffSerializer(user)
         return Response(serializer.data)
     def put(self, request):
         user = request.user
         print('USEEER', user)
         
         if 'password' in request.data:
-            serializer = UserSerializer(user, data=request.data, partial=True)
+            serializer = StaffSerializer(user, data=request.data, partial=True)
         else:
-            serializer = UserSerializer(user, data=request.data, partial=True)
+            serializer = StaffSerializer(user, data=request.data, partial=True)
 
         if serializer.is_valid():
             serializer.save()

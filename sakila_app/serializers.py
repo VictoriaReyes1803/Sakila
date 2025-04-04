@@ -3,6 +3,12 @@ from .models import *
 
 from rest_framework import serializers
 
+class RolSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Roles
+        fields = ['id', 'role_name'] 
+
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -114,17 +120,37 @@ class RentalSerializer(serializers.ModelSerializer):
         model = Rental
         fields = '__all__'
 
-class StaffSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Staff
-        fields = '__all__'
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data.pop('password', None)
-        return data
 
 class StoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Store
         fields = '__all__'
+        
+        
+
+
+class StaffSerializer(serializers.ModelSerializer):
+    address = AddressSerializer()  # Serializador anidado para la relación de Address
+    store = StoreSerializer()  # Serializador anidado para la relación de Store
+    role = RolSerializer()
+    class Meta:
+        model = Staff
+        fields = '__all__'
+        extra_kwargs = {'password': {'write_only': True}}
+
+
+    def update(self, instance, validated_data):
+        password = validated_data.get('password', None)
+        if password:
+            instance.set_password(password)  
+            validated_data.pop('password')
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        instance.save()
+        return instance
+    
+    def create(self, validated_data):
+        validated_data['password'] = make_password(validated_data['password'])
+        return super().create(validated_data)
+ 

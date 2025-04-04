@@ -9,11 +9,107 @@
 
 from django.db import models
 from django.contrib.auth.hashers import make_password
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser,PermissionsMixin, BaseUserManager
 import jwt
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
+
+
+class Roles(models.Model):
+    id = models.AutoField(primary_key=True)
+    role_name = models.CharField(max_length=45, null=False)
+
+    class Meta:
+        managed = False
+        db_table = 'roles'
+    def __str__(self):
+        return self.role_name 
+
+
+
+
+class Address(models.Model):
+    address_id = models.SmallAutoField(primary_key=True)
+    address = models.CharField(max_length=50)
+    address2 = models.CharField(max_length=50, blank=True, null=True)
+    district = models.CharField(max_length=20)
+    city = models.ForeignKey('City', models.DO_NOTHING)
+    postal_code = models.CharField(max_length=10, blank=True, null=True)
+    phone = models.CharField(max_length=20)
+    location = models.TextField()
+    last_update = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'address'
+    def __str__(self):
+        return self.address
+
+
+class Staff(AbstractBaseUser):
+    staff_id = models.AutoField(primary_key=True)
+    first_name = models.CharField(max_length=45)
+    last_name = models.CharField(max_length=45)
+    address = models.ForeignKey(Address, models.DO_NOTHING)
+    picture = models.BinaryField(blank=True, null=True)
+    email = models.EmailField(unique=True,max_length=50, blank=False, null=False)
+    store = models.ForeignKey('Store', on_delete=models.CASCADE,related_name='staff_members')
+    active = models.IntegerField(default=0)
+  
+    username = models.CharField(max_length=16)
+    password = models.CharField(max_length=100, blank=False, null=False)
+    last_update = models.DateTimeField(auto_now=True)
+    role = models.ForeignKey(Roles, models.DO_NOTHING, null=False)
+   
+
+    USERNAME_FIELD = 'email'
+  
+    def __str__(self):
+        return self.email + " - " + self.role
+    
+    def generate_reset_token(self):
+        """Genera un token JWT para restablecimiento de contraseña."""
+        expiration = timezone.now() + timedelta(minutes=4)  
+        token = jwt.encode({
+            'user_id': self.id,
+            'exp': int(expiration.timestamp())
+        }, settings.SECRET_KEY, algorithm='HS256')
+        return token
+
+    def verify_reset_token(self, token):
+        """Verifica la validez del token JWT para restablecimiento de contraseña."""
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+            
+            return payload['user_id'] == self.id  
+        except jwt.ExpiredSignatureError:
+            return False
+        except (jwt.DecodeError, jwt.InvalidTokenError):
+            return False
+    def set_password(self, raw_password):
+        self.password = make_password(raw_password)
+    class Meta:
+        db_table = 'staff' 
+        managed = True
+    
+
+
+class StaffManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('El email debe ser proporcionado')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        return self.create_user(email, password, **extra_fields)
 
 
 class UserManager(BaseUserManager):
@@ -93,21 +189,6 @@ class Actor(models.Model):
         managed = False
         db_table = 'actor'
 
-
-class Address(models.Model):
-    address_id = models.SmallAutoField(primary_key=True)
-    address = models.CharField(max_length=50)
-    address2 = models.CharField(max_length=50, blank=True, null=True)
-    district = models.CharField(max_length=20)
-    city = models.ForeignKey('City', models.DO_NOTHING)
-    postal_code = models.CharField(max_length=10, blank=True, null=True)
-    phone = models.CharField(max_length=20)
-    location = models.TextField()
-    last_update = models.DateTimeField()
-
-    class Meta:
-        managed = False
-        db_table = 'address'
 
 
 class Category(models.Model):
@@ -259,54 +340,6 @@ class Rental(models.Model):
         unique_together = (('rental_date', 'inventory', 'customer'),)
 
 
-class Roles(models.Model):
-    id = models.AutoField(primary_key=True)
-    role_name = models.CharField(max_length=45, null=False)
-
-    class Meta:
-        managed = False
-        db_table = 'roles'
-
-class StaffManager(BaseUserManager):
-    def create_user(self, username, password=None, **extra_fields):
-        user = self.model(username=username, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-
-class Staff(AbstractBaseUser):
-    staff_id = models.AutoField(primary_key=True)
-    first_name = models.CharField(max_length=45)
-    last_name = models.CharField(max_length=45)
-    address = models.ForeignKey(Address, models.DO_NOTHING)
-    picture = models.TextField(blank=True, null=True)
-    email = models.CharField(max_length=50, blank=False, null=False)
-    store = models.ForeignKey('Store', on_delete=models.CASCADE,related_name='staff_members')
-    active = models.IntegerField(default=0)
-    username = models.CharField(max_length=16)
-    password = models.CharField(max_length=128, blank=False, null=False)
-    last_update = models.DateTimeField()
-    role_id = models.ForeignKey(Roles, models.DO_NOTHING, null=False)
-    last_login = None
-
-    @property
-    def is_active(self):
-        return bool(self.active)
-
-    @property
-    def is_authenticated(self):
-        return True
-
-    objects = StaffManager()
-
-    USERNAME_FIELD = 'email'
-
-    class Meta:
-        managed = False
-        db_table = 'staff'
-
-
 class Store(models.Model):
     store_id = models.AutoField(primary_key=True)
     manager_staff = models.OneToOneField(Staff, on_delete=models.CASCADE,related_name='managed_store')
@@ -316,3 +349,6 @@ class Store(models.Model):
     class Meta:
         managed = False
         db_table = 'store'
+        
+    def __str__(self):
+        return self.manager_staff.first_name + " - " + self.address.address

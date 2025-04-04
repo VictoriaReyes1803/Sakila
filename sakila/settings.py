@@ -45,7 +45,8 @@ INSTALLED_APPS = [
     'drf_generators',
     'corsheaders',
     'storages',
-    'rest_framework_simplejwt.token_blacklist',
+    
+    'rest_framework_simplejwt',
 ]
 
 REST_FRAMEWORK = {
@@ -103,8 +104,8 @@ SIMPLE_JWT = {
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
     'VERIFYING_KEY': None,
-    'USER_ID_FIELD': 'id',
-    'USER_ID_CLAIM': 'user_id',
+    'USER_ID_FIELD': 'staff_id',
+    'USER_ID_CLAIM': 'staff_id',
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
     'BLACKLIST_ENABLED': True, 
