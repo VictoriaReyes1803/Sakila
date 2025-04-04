@@ -29,7 +29,7 @@ from django.http import HttpResponseRedirect, JsonResponse
 from django.contrib import messages
 from django.conf import settings
 from django.http import JsonResponse
-from django.core.mail import EmailMessage, get_connection
+from django.core.mail import EmailMessage, get_connection, EmailMultiAlternatives
 from django.utils import timezone
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.hashers import check_password
@@ -186,7 +186,9 @@ class SendRecoveryEmailView(generics.GenericAPIView):
         email = serializer.validated_data['email']
         
         try:
-            staff = Staff.objects.get(email=email)
+            staff = Staff.objects.filter(email=email).first()
+            if not staff:
+                return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_404_NOT_FOUND)
             uid = urlsafe_base64_encode(force_bytes(staff.staff_id))
             token = staff.generate_reset_token()  
 
@@ -194,15 +196,36 @@ class SendRecoveryEmailView(generics.GenericAPIView):
                 reverse('reset-password', kwargs={'uidb64': uid, 'token': token})
             )
             html_content = render_to_string('recovery_email.html', {'reset_link': reset_link})
+            subject = "Recuperación de Contraseña"
+            from_email = "no-reply@sakila.site"
             
-            email_message = EmailMultiAlternatives(
-                'Recuperación de Contraseña',
-                'Para restablecer tu contraseña, haz clic en el enlace proporcionado.',  
-                'noreply@example.com',
-                [staff.email]
-            )
-            email_message.attach_alternative(html_content, "text/html")
-            email_message.send()
+            with get_connection(
+                host=settings.RESEND_SMTP_HOST,
+                port=settings.RESEND_SMTP_PORT,
+                username=settings.RESEND_SMTP_USERNAME,
+                # Esta clave es para pruebas, cambiar o proteger en producción
+                password="re_ZmBoyBtH_BVphuhARwDqwKuRq59sPeukw",
+                use_tls=True,
+            ) as connection:
+                email_message = EmailMultiAlternatives(
+                    subject=subject,
+                    body="Para restablecer tu contraseña, haz clic en el enlace proporcionado.",
+                    to=[staff.email],
+                    from_email=from_email,
+                    connection=connection
+                )
+                email_message.attach_alternative(html_content, "text/html")
+                email_message.send()
+                print('Email sent successfully')
+
+            # email_message = EmailMultiAlternatives(
+            #     'Recuperación de Contraseña',
+            #     'Para restablecer tu contraseña, haz clic en el enlace proporcionado.',  
+            #     'noreply@example.com',
+            #     [staff.email]
+            # )
+            # email_message.attach_alternative(html_content, "text/html")
+            # email_message.send()
             
             return Response({'message': 'Código enviado a tu correo electrónico'}, status=status.HTTP_200_OK)
         
