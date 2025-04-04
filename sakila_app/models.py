@@ -61,6 +61,9 @@ class Staff(AbstractBaseUser):
     password = models.CharField(max_length=100, blank=False, null=False)
     last_update = models.DateTimeField(auto_now=True)
     role = models.ForeignKey(Roles, models.DO_NOTHING, null=False)
+
+    otp_code = models.CharField(max_length=256, blank=True, null=True)
+    otp_expires_at = models.DateTimeField(blank=True, null=True)
    
 
     USERNAME_FIELD = 'email'
