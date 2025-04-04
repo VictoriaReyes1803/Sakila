@@ -198,7 +198,7 @@ class SendRecoveryEmailView(generics.GenericAPIView):
             )
             html_content = render_to_string('recovery_email.html', {'reset_link': reset_link})
             subject = "Recuperación de Contraseña"
-            from_email = "no-reply@sakila.site"
+            from_email = "no-reply@misuperdominio.site"
             
             with get_connection(
                 host=settings.RESEND_SMTP_HOST,
