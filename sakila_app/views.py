@@ -16,6 +16,13 @@ class ActorViewSet(viewsets.ModelViewSet):
 
         return super().destroy(request, *args, **kwargs)
 
+    def destroy(self, request, *args, **kwargs):
+        actor = self.get_object()
+
+        FilmActor.objects.filter(actor=actor).delete()
+
+        return super().destroy(request, *args, **kwargs)
+
 class AddressViewSet(viewsets.ModelViewSet):
     queryset = Address.objects.all()
     serializer_class = AddressSerializer
