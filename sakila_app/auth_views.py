@@ -105,12 +105,16 @@ class VerifyCodeView(generics.GenericAPIView):
         user_authenticate = authenticate(email=email, password=password)
 
         if user_authenticate:
+            staff.otp_code = None
+            staff.otp_expires_at = None
+            staff.save()
             refresh = RefreshToken.for_user(user_authenticate)
             return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
                 'user': StaffSerializer(user_authenticate).data
             })
+
 
         return Response({'error': 'Credenciales inválidas'}, status=401)
 
