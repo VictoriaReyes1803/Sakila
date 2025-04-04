@@ -130,12 +130,28 @@ class StoreSerializer(serializers.ModelSerializer):
 
 
 class StaffSerializer(serializers.ModelSerializer):
-    address = AddressSerializer()  # Serializador anidado para la relación de Address
-    store = StoreSerializer()  # Serializador anidado para la relación de Store
-    role = RolSerializer()
+    address = AddressSerializer(read_only=True)
+    store = StoreSerializer(read_only=True)
+    role = RolSerializer(read_only=True)
+    
+    address_id = serializers.PrimaryKeyRelatedField(
+        queryset=Address.objects.all(), source='address', write_only=True
+    )
+    store_id = serializers.PrimaryKeyRelatedField(
+        queryset=Store.objects.all(), source='store', write_only=True
+    )
+    role_id = serializers.PrimaryKeyRelatedField(
+        queryset=Roles.objects.all(), source='role', write_only=True
+    )
+    
     class Meta:
         model = Staff
-        fields = '__all__'
+        fields = [
+            'staff_id', 'first_name', 'last_name', 'email', 'username',
+            'password', 'active', 'picture', 'last_update', 'otp_code', 'otp_expires_at',
+            'address', 'store', 'role',     # salida (read-only)
+            'address_id', 'store_id', 'role_id'  # entrada (write-only)
+        ]
         extra_kwargs = {'password': {'write_only': True}}
 
 

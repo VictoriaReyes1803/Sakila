@@ -26,14 +26,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-=^9kl4r_^ghzjjfibrog+$_!5ouo@tb$13j*!l4_e5k&k$y8ud'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-RESEND_SMTP_PORT = 587
+RESEND_SMTP_PORT = 2587
 RESEND_SMTP_USERNAME = 'resend'
 RESEND_SMTP_HOST = 'smtp.resend.com'
 
