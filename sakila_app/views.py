@@ -8,7 +8,7 @@ from .serializers import *
 class ActorViewSet(viewsets.ModelViewSet):
     queryset = Actor.objects.all()
     serializer_class = ActorSerializer
-    print(queryset)
+  
     def destroy(self, request, *args, **kwargs):
         actor = self.get_object()
 
