@@ -75,7 +75,7 @@ class Staff(AbstractBaseUser):
         """Genera un token JWT para restablecimiento de contraseña."""
         expiration = timezone.now() + timedelta(minutes=4)  
         token = jwt.encode({
-            'user_id': self.id,
+            'staff_id': self.staff_id,
             'exp': int(expiration.timestamp())
         }, settings.SECRET_KEY, algorithm='HS256')
         return token
@@ -85,7 +85,7 @@ class Staff(AbstractBaseUser):
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
             
-            return payload['user_id'] == self.id  
+            return payload['staff_id'] == self.staff_id  
         except jwt.ExpiredSignatureError:
             return False
         except (jwt.DecodeError, jwt.InvalidTokenError):

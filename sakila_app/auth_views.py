@@ -186,9 +186,9 @@ class SendRecoveryEmailView(generics.GenericAPIView):
         email = serializer.validated_data['email']
         
         try:
-            user = User.objects.get(email=email)
-            uid = urlsafe_base64_encode(force_bytes(user.id))
-            token = user.generate_reset_token()  
+            staff = Staff.objects.get(email=email)
+            uid = urlsafe_base64_encode(force_bytes(staff.staff_id))
+            token = staff.generate_reset_token()  
 
             reset_link = request.build_absolute_uri(
                 reverse('reset-password', kwargs={'uidb64': uid, 'token': token})
@@ -199,7 +199,7 @@ class SendRecoveryEmailView(generics.GenericAPIView):
                 'Recuperación de Contraseña',
                 'Para restablecer tu contraseña, haz clic en el enlace proporcionado.',  
                 'noreply@example.com',
-                [user.email]
+                [staff.email]
             )
             email_message.attach_alternative(html_content, "text/html")
             email_message.send()
@@ -211,10 +211,10 @@ class SendRecoveryEmailView(generics.GenericAPIView):
 
 def reset_password_view(request, uidb64, token):
     try:
-        user_id = force_str(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(id=user_id)  
+        staff_id = force_str(urlsafe_base64_decode(uidb64))
+        staff = Staff.objects.get(staff_id=staff_id)  
         
-        token_status = user.verify_reset_token(token)
+        token_status = staff.verify_reset_token(token)
         print(token_status)
 
         if token_status == 'expired' or token_status == False:
@@ -223,7 +223,7 @@ def reset_password_view(request, uidb64, token):
             return JsonResponse({'error': 'El enlace es inválido. Por favor verifica e intenta nuevamente.'}, status=400)
         
 
-        if not user.verify_reset_token(token):  
+        if not staff.verify_reset_token(token):  
             return render(request, 'reset_password.html', {'error': 'Token incorrecto o expirado'})
         
         return render(request, 'reset_password.html', {'uidb64': uidb64, 'token': token})
@@ -237,16 +237,16 @@ class ResetPasswordView(generics.GenericAPIView):
     permission_classes = [AllowAny]
 
     def post(self, request, uidb64, token):
-        user_id = force_str(urlsafe_base64_decode(uidb64))
+        staff_id = force_str(urlsafe_base64_decode(uidb64))
         try:
-            user = User.objects.get(id=user_id)
+            staff = Staff.objects.get(staff_id=staff_id)
 
-            if not user.verify_reset_token(token):  
+            if not staff.verify_reset_token(token):  
                 return Response({'error': 'Token incorrecto o expirado'}, status=status.HTTP_400_BAD_REQUEST)
 
             new_password = request.data.get('new_password')
-            user.set_password(new_password)
-            user.save()
+            staff.set_password(new_password)
+            staff.save()
          
             messages.success(request, 'La contraseña se cambió exitosamente.')
             
