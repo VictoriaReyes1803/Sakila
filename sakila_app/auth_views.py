@@ -1,4 +1,6 @@
 import hashlib
+import os
+import secrets
 
 from django.shortcuts import render
 from rest_framework.views import APIView
@@ -25,6 +27,50 @@ from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from django.http import HttpResponseRedirect, JsonResponse
 from django.contrib import messages
+from django.conf import settings
+from django.http import JsonResponse
+from django.core.mail import EmailMessage, get_connection
+from django.utils import timezone
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import check_password
+
+def send_otp(recipient):
+    subject = "Código Temporal de Verificación"
+    from_email = "no-reply@misuperdominio.site"
+
+    try:
+        staff = Staff.objects.get(email=recipient[0])
+    except Staff.DoesNotExist:
+        return Response({'error': f'Usuario con el correo {recipient[0]} no encontrado'}, status=404)
+
+
+    otp = ''.join(str(secrets.randbelow(10)) for _ in range(6))
+    expiration_time = timezone.now() + timezone.timedelta(minutes=10)
+    encrypted_otp = make_password(otp)
+
+    staff.otp_code = encrypted_otp
+    staff.otp_expires_at = expiration_time
+    staff.save()
+
+    try:
+        with get_connection(
+                host=settings.RESEND_SMTP_HOST,
+                port=settings.RESEND_SMTP_PORT,
+                username=settings.RESEND_SMTP_USERNAME,
+                #Esta llave es meramente usada para la prueba, despues de revision se eliminara
+                password="re_ZmBoyBtH_BVphuhARwDqwKuRq59sPeukw",
+                use_tls=True,
+        ) as connection:
+            email = EmailMessage(
+                subject=subject,
+                body=f"Tu código temporal es: {otp}\n Este código es válido por 10 minutos.",
+                to=recipient,
+                from_email=from_email,
+                connection=connection
+            ).send()
+            print('Email sent successfully')
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 class RegisterView(generics.CreateAPIView):
@@ -37,52 +83,54 @@ class RegisterView(generics.CreateAPIView):
         serializer.save(active=True)
 
 
-class LoginView(APIView):
-    def post(self, request):
-        email = request.data.get('email')
-        password = request.data.get('password')
-
-        user = Staff.objects.filter(email=email).first()
-        if not user:
-            return Response({'error': 'Staff no existe'}, status=status.HTTP_401_UNAUTHORIZED)
-
-        # Verificar contraseña SHA1
-        hashed_password = hashlib.sha1(password.encode()).hexdigest()
-        if user.password != hashed_password:
-            return Response({'error': 'Contraseña inválida'}, status=status.HTTP_401_UNAUTHORIZED)
-
-        login(request, user, backend='sakila_app.backends.StaffAuthBackend')
-        return Response({'message': '¡Login exitoso!'})
-
-
-class LoginView(generics.GenericAPIView):
-    
+class VerifyCodeView(generics.GenericAPIView):
     permission_classes = [AllowAny]
+
     def post(self, request):
         email = request.data.get('email')
-        username = request.data.get('username')
+        otp = request.data.get('otp')
         password = request.data.get('password')
-        # print(f"Email: {email}, Password: {password}")
-        
-        user = None
-        if email:
-            user = authenticate(request, email=email, password=password)
-        elif username:
-            user = authenticate(request, username=username, password=password)
-        
-        
-        if user is None:
-            return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        if user:
-            refresh = RefreshToken.for_user(user)
+        if not email or not otp or not password:
+            return Response({'error': 'Faltan datos requeridos'}, status=400)
+
+        try:
+            staff = Staff.objects.get(email=email)
+        except Staff.DoesNotExist:
+            return Response({'error': f'Usuario con el correo {email} no encontrado'}, status=404)
+
+        if not check_password(otp, staff.otp_code) or timezone.now() > staff.otp_expires_at:
+            return Response({'error': 'Código OTP incorrecto o expirado'}, status=400)
+
+        user_authenticate = authenticate(email=email, password=password)
+
+        if user_authenticate:
+            staff.otp_code = None
+            staff.otp_expires_at = None
+            staff.save()
+            refresh = RefreshToken.for_user(user_authenticate)
             return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
-                'user': StaffSerializer(user).data
+                'user': StaffSerializer(user_authenticate).data
             })
-        return Response({'error': 'Credenciales inválidas'}, status=status.HTTP_401_UNAUTHORIZED)
-    
+
+
+        return Response({'error': 'Credenciales inválidas'}, status=401)
+
+
+class LoginView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        email = request.data.get('email')
+
+        try:
+            staff = Staff.objects.get(email=email)
+        except Staff.DoesNotExist:
+            return Response({'error': f'Usuario con el correo {email} no encontrado'}, status=404)
+
+        send_otp([email])
+        return Response({'message': 'OTP enviado'}, status=status.HTTP_200_OK)
 
 
 class UserProfileView(APIView):
