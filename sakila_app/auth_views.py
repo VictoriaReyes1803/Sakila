@@ -70,6 +70,7 @@ def send_otp(recipient):
             ).send()
             print('Email sent successfully')
     except Exception as e:
+        print('Error sending email:', e)
         return JsonResponse({'error': str(e)}, status=500)
 
 
